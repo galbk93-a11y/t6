@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>פתרון – סקיצת גרף פולינום</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#1b1f2a;--mu:#5b6275;--ac:#2f5bea;--ln:#e2e5ee;--cv:#d6336c}
+@media (prefers-color-scheme:dark){:root{--bg:#14171f;--card:#1d212c;--tx:#eef0f6;--mu:#a2a9bd;--ac:#7f9bff;--ln:#2c3140;--cv:#ff7aa8}}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,"Segoe UI",Arial,sans-serif;line-height:1.55}
+header{padding:16px;max-width:900px;margin:auto}
+h1{font-size:1.3rem;margin:0 0 4px}
+.sub{color:var(--mu);font-size:.9rem}
+main{max-width:900px;margin:auto;padding:0 16px 40px;display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:14px}
+.card h2{margin:0 0 8px;font-size:1.05rem}
+.m{direction:ltr;unicode-bidi:isolate;font-family:"Cambria Math","STIX Two Math",Georgia,serif;font-size:1.1rem}
+.row{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:700px){.row{grid-template-columns:1fr 1fr}}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+td,th{border-bottom:1px solid var(--ln);padding:4px 6px;text-align:right}
+th{color:var(--mu);font-weight:600}
+svg{width:100%;height:auto;border:1px solid var(--ln);border-radius:8px}
+</style>
+</head>
+<body>
+<header>
+<h1>סקיצה של גרף פולינום – פתרונות</h1>
+<div class="sub">לכל תרגיל: פירוק, נקודות אפס וריבוי, מעלה ואיבר מוביל, קצוות, חיתוך עם ציר y ושרטוט.</div>
+</header>
+<main id="app"></main>
+<script>
+const EX=[
+{n:1,eq:"y = −(x − 2)²(x + 4)",fac:"y = −(x − 2)²(x + 4)  (כבר מפורק)",z:[[-4,1],[2,2]],deg:3,lead:"−x³",a:-1,f:x=>-((x-2)**2)*(x+4),yi:"−16"},
+{n:2,eq:"y = ¼(x + 1)²(x − 3)²",fac:"y = ¼(x + 1)²(x − 3)²  (כבר מפורק)",z:[[-1,2],[3,2]],deg:4,lead:"¼x⁴",a:1,f:x=>.25*(x+1)**2*(x-3)**2,yi:"9/4"},
+{n:3,eq:"y = −x³(x − 4)²",fac:"y = −x³(x − 4)²  (כבר מפורק)",z:[[0,3],[4,2]],deg:5,lead:"−x⁵",a:-1,f:x=>-(x**3)*(x-4)**2,yi:"0"},
+{n:4,eq:"y = −x⁵ + 9x³",fac:"y = −x³(x² − 9) = −x³(x − 3)(x + 3)",z:[[-3,1],[0,3],[3,1]],deg:5,lead:"−x⁵",a:-1,f:x=>-(x**5)+9*x**3,yi:"0"},
+{n:5,eq:"y = (x² − 9)(x + 2)",fac:"y = (x − 3)(x + 3)(x + 2)",z:[[-3,1],[-2,1],[3,1]],deg:3,lead:"x³",a:1,f:x=>(x*x-9)*(x+2),yi:"−18"},
+{n:6,eq:"y = (x − 1)³(x − 2)(x + 2)²",fac:"y = (x − 1)³(x − 2)(x + 2)²  (כבר מפורק)",z:[[-2,2],[1,3],[2,1]],deg:6,lead:"x⁶",a:1,f:x=>(x-1)**3*(x-2)*(x+2)**2,yi:"8"},
+{n:7,eq:"y = x(x + 3)(x − 3)",fac:"y = x(x + 3)(x − 3)  (כבר מפורק)",z:[[-3,1],[0,1],[3,1]],deg:3,lead:"x³",a:1,f:x=>x*(x+3)*(x-3),yi:"0"}
+];
+const sg=v=>v<0?"−"+(-v):""+v;
+const beh=m=>m==1?"חותך את ציר x":m==2?"משיק לציר x (נוגע ולא חותך)":"חותך את ציר x עם השטחה (נקודת פיתול אופקית)";
+function ends(e){const odd=e.deg%2==1,pos=e.a>0;
+ const R=pos?"+∞":"−∞";const L=odd?(pos?"−∞":"+∞"):(pos?"+∞":"−∞");
+ return {L,R,why:(odd?"מעלה אי־זוגית":"מעלה זוגית")+(pos?" ומקדם מוביל חיובי":" ומקדם מוביל שלילי")};}
+function plot(e){
+ const W=420,H=280,P=22,zs=e.z.map(z=>z[0]),lo=Math.min(...zs,0)-1.2,hi=Math.max(...zs,0)+1.2;
+ let mx=0;for(let x=Math.min(...zs);x<=Math.max(...zs);x+=.02)mx=Math.max(mx,Math.abs(e.f(x)));
+ if(mx<1e-6)mx=1;const cl=mx*1.5;
+ const X=x=>P+(x-lo)/(hi-lo)*(W-2*P),Y=y=>H/2-Math.max(-cl,Math.min(cl,y))/cl*(H/2-P);
+ let d="";for(let i=0;i<=400;i++){const x=lo+(hi-lo)*i/400;d+=(i?"L":"M")+X(x).toFixed(1)+","+Y(e.f(x)).toFixed(1)}
+ let s=`<svg viewBox="0 0 ${W} ${H}" direction="ltr"><line x1="6" y1="${H/2}" x2="${W-6}" y2="${H/2}" stroke="currentColor" opacity=".5"/><line x1="${X(0)}" y1="6" x2="${X(0)}" y2="${H-6}" stroke="currentColor" opacity=".5"/>
+ <text x="${W-10}" y="${H/2-6}" font-size="12" fill="currentColor">x</text><text x="${X(0)+6}" y="14" font-size="12" fill="currentColor">y</text>
+ <path d="${d}" fill="none" stroke="var(--cv)" stroke-width="2.4" stroke-linejoin="round"/>`;
+ e.z.forEach(([r,m])=>{s+=`<circle cx="${X(r)}" cy="${H/2}" r="4.5" fill="var(--ac)"/><text x="${X(r)}" y="${H/2+(m==2?-12:18)}" font-size="12" text-anchor="middle" fill="currentColor">${sg(r)}</text>`});
+ if(e.yi!=="0")s+=`<circle cx="${X(0)}" cy="${Y(e.f(0))}" r="3.5" fill="none" stroke="var(--ac)" stroke-width="2"/>`;
+ return s+"</svg>";}
+const app=document.getElementById("app");
+EX.forEach(e=>{const en=ends(e);
+ const rows=e.z.map(([r,m])=>`<tr><td class="m">x = ${sg(r)}</td><td>${m}</td><td>${beh(m)}</td></tr>`).join("");
+ app.insertAdjacentHTML("beforeend",`<section class="card"><h2>תרגיל ${e.n}: <span class="m">${e.eq}</span></h2>
+ <div class="row"><div>
+ <p><b>פירוק לגורמים:</b> <span class="m">${e.fac}</span></p>
+ <table><tr><th>נקודת אפס</th><th>ריבוי</th><th>התנהגות</th></tr>${rows}</table>
+ <p><b>מעלת הפולינום:</b> ${e.deg} &nbsp; <b>איבר מוביל:</b> <span class="m">${e.lead}</span></p>
+ <p><b>קצוות</b> (${en.why}):<br>כש־<span class="m">x→−∞</span> אז <span class="m">y→${en.L}</span><br>כש־<span class="m">x→+∞</span> אז <span class="m">y→${en.R}</span></p>
+ <p><b>חיתוך עם ציר y:</b> <span class="m">(0, ${e.yi})</span></p>
+ </div><div>${plot(e)}<div class="sub">נקודות כחולות: אפסים. העקומה סקיצה בקנה מידה מקורב.</div></div></div></section>`)});
+</script>
+</body>
+</html>
